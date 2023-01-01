@@ -1,0 +1,38 @@
+// Nathan Moore
+// December 19, 2022
+
+/** Finds a root of the function fx when bounded on the interval [a, b] via the bisection method.
+The interval [a,b] must cross the x-axis, i.e fx(a)*fx(b) must be less than 0. 
+if full_results is true the iteration count is also retured.
+*/
+bisect = LAMBDA(fx, a, b, tolerance, full_results,
+    LET(
+        want_full, IF(ISOMITTED(full_results), FALSE, full_results),
+        f_a, fx(a),
+        f_b, fx(b),
+        solution, IFS(f_a = 0, a, f_b = 0, b, TRUE, _bisect_worker(fx, tolerance, a, b, f_a, 200)),
+        IF(want_full, solution, INDEX(solution, 1, 1))
+    )
+);
+
+_bisect_worker = LAMBDA(fx, tolerance, a, b, f_a, n,
+    LET(
+        c, (a + b) / 2,
+        f_c, fx(c),
+        IF(
+            OR(f_c = 0, (b - a) / 2 <= tolerance),
+            HSTACK(c, 200 - n),
+            IF(
+                n = 0,
+                NA(),
+                LET(
+                    cond, SIGN(f_a) = SIGN(f_c),
+                    new_a, IF(cond, c, a),
+                    new_b, IF(cond, b, c),
+                    new_f_a, IF(cond, f_c, f_a),
+                    _bisect_worker(fx, tolerance, new_a, new_b, new_f_a, n - 1)
+                )
+            )
+        )
+    )
+);
