@@ -1,7 +1,8 @@
 // Nathan Moore
 // December 19, 2022
 
-/** Finds a root of the function fx when bounded on the interval [a, b] via the bisection method.
+/**
+Finds a root of the function fx when bounded on the interval [a, b] via the bisection method.
 The interval [a,b] must cross the x-axis, i.e fx(a)*fx(b) must be less than 0. 
 if full_results is true the iteration count is also retured.
 */
@@ -32,6 +33,70 @@ _bisect_worker = LAMBDA(fx, tolerance, a, b, f_a, n,
                     new_f_a, IF(cond, f_c, f_a),
                     _bisect_worker(fx, tolerance, new_a, new_b, new_f_a, n - 1)
                 )
+            )
+        )
+    )
+);
+
+/**
+Brent's Method: Finds the root of f(x) when bounded by [a, b], when f(a) * f(b) < 0
+Brent, R. P. (1973), Algorithms for Minimization without Derivatives, Englewood Cliffs, NJ: Prentice-Hall, ISBN 0-13-022335-2
+*/
+brent = LAMBDA(fx, a, b, tolerance, full_results,
+    LET(
+        want_full, IF(ISOMITTED(full_results), FALSE, full_results),
+        fa, fx(a),
+        fb, fx(b),
+        d, b - a,
+        solution, IFS(
+            fa = 0,
+            a,
+            fb = 0,
+            b,
+            TRUE,
+            _brent_worker(fx, tolerance, a, b, a, d, d, fa, fb, fa, 200)
+        ),
+        IF(want_full, solution, INDEX(solution, 1, 1))
+    )
+);
+
+// the variable names used in this function are derived from the varible names in Brent's published
+// ALGO60 implementation.
+_brent_worker = LAMBDA(fx, tol, a, b, c, d, e, fa, fb, fc, n,
+    LET(
+        need_swap, ABS(fc) < ABS(fb),
+        a, IF(need_swap, b, a),
+        b, IF(need_swap, c, b),
+        c, IF(need_swap, a, c),
+        fa, IF(need_swap, fb, fa),
+        fb, IF(need_swap, fc, fb),
+        fc, IF(need_swap, fa, fc),
+        m, 0.5 * (c - b),
+        // converged!
+        IF(
+            OR(ABS(m) < tol, fb = 0),
+            HSTACK(b, 200 - n),
+            LET(
+                s, fb / fa,
+                t, fa / fc,
+                r, fb / fc,
+                p0, IF(a = c, 2 * m * s, s * (2 * m * t * (t - r) - (b - a) * (r - 1))),
+                q0, IF(a = c, 1 - s, (t - 1) * (r - 1) * (s - 1)),
+                p, IF(p0 > 0, p0, -p0),
+                q, IF(p0 > 0, -q0, q0),
+                d_cond, AND(2 * p < 3 * m * q - ABS(tol * q), p < ABS(0.5 * e * q)),
+                d0, IF(d_cond, p / q, m),
+                e0, IF(d_cond, d, m),
+                a_1, b,
+                fa_1, fb,
+                b_1, b + IF(ABS(d0) > tol, d0, SIGN(m) * tol),
+                fb_1, fx(b_1),
+                a_eq_c, SIGN(fb_1) = SIGN(fc),
+                c_1, IF(a_eq_c, a_1, c),
+                fc_1, IF(a_eq_c, fa_1, fc),
+                d_1, IF(a_eq_c, b_1 - a_1, d0),
+                e_1, IF(a_eq_c, b_1 - a_1, e0),
+                IF(n = 0, NA(), _brent_worker(fx, tol, a_1, b_1, c_1, d_1, e_1, fa_1, fb_1, fc_1, n - 1))
             )
         )
     )
