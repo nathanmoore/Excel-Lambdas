@@ -6,7 +6,7 @@ Finds a root of the function fx when bounded on the interval [a, b] via the bise
 The interval [a,b] must cross the x-axis, i.e fx(a)*fx(b) must be less than 0. 
 if full_results is true the iteration count is also retured.
 */
-bisect = LAMBDA(fx, a, b, tolerance, full_results,
+bisect = LAMBDA(fx, a, b, tolerance, [full_results],
     LET(
         want_full, IF(ISOMITTED(full_results), FALSE, full_results),
         f_a, fx(a),
@@ -42,7 +42,7 @@ _bisect_worker = LAMBDA(fx, tolerance, a, b, f_a, n,
 Brent's Method: Finds the root of f(x) when bounded by [a, b], when f(a) * f(b) < 0
 Brent, R. P. (1973), Algorithms for Minimization without Derivatives, Englewood Cliffs, NJ: Prentice-Hall, ISBN 0-13-022335-2
 */
-brent = LAMBDA(fx, a, b, tolerance, full_results,
+brent = LAMBDA(fx, a, b, tolerance, [full_results],
     LET(
         want_full, IF(ISOMITTED(full_results), FALSE, full_results),
         fa, fx(a),
@@ -96,7 +96,11 @@ _brent_worker = LAMBDA(fx, tol, a, b, c, d, e, fa, fb, fc, n,
                 fc_1, IF(a_eq_c, fa_1, fc),
                 d_1, IF(a_eq_c, b_1 - a_1, d0),
                 e_1, IF(a_eq_c, b_1 - a_1, e0),
-                IF(n = 0, NA(), _brent_worker(fx, tol, a_1, b_1, c_1, d_1, e_1, fa_1, fb_1, fc_1, n - 1))
+                IF(
+                    n = 0,
+                    NA(),
+                    _brent_worker(fx, tol, a_1, b_1, c_1, d_1, e_1, fa_1, fb_1, fc_1, n - 1)
+                )
             )
         )
     )
